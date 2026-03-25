@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Policy Impact Simulator — CLEWS &amp; OG-Core</title>
+  <link rel="stylesheet" href="/static/css/main.css" />
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+
+<div id="mobile-warning" class="mobile-warning hidden">
+  This tool is optimised for desktop screens (1280px+). Some features may not display correctly on smaller screens.
+</div>
+
+<header class="topbar">
+  <div class="topbar-brand">
+    <h1>Policy Impact Simulator</h1>
+    <span class="subtitle">(CLEWS &amp; OG-Core Integration)</span>
+  </div>
+  <div class="topbar-right">
+    <button class="arch-btn" onclick="showFeaturesModal()">Features</button>
+    <button class="arch-btn" onclick="showArchModal()">Architecture</button>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">Dark</button>
+  </div>
+</header>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" data-tab="models"     onclick="switchTab('models')"     title="Run CLEWS or OG-Core independently. Create and manage policy scenarios with custom parameters."><span class="tab-num">1</span>Models</button>
+  <button class="tab-btn"        data-tab="coupled"    onclick="switchTab('coupled')"    title="Chain CLEWS and OG-Core together. Model A output feeds into Model B through a validated mapping layer."><span class="tab-num">2</span>Coupled</button>
+  <button class="tab-btn"        data-tab="converging" onclick="switchTab('converging')" title="Run CLEWS and OG-Core iteratively until GDP change falls below the tolerance threshold — finding economic equilibrium."><span class="tab-num">3</span>Converging</button>
+  <button class="tab-btn"        data-tab="results"    onclick="switchTab('results')"    title="Browse all past runs, compare two runs side-by-side with % differences, and export data as CSV or JSON."><span class="tab-num">4</span>Results</button>
+  <button class="tab-btn"        data-tab="help"       onclick="switchTab('help')"       title="User manual, FAQ, and parameter reference guide."><span class="tab-num">5</span>Help</button>
+</nav>
+
+<div class="main">
+
+<section id="tab-models" class="tab-panel active">
+  <div class="grid-3">
+
+    <div>
+      <div class="card">
+        <div class="card-title">Scenarios</div>
+        <div class="form-group">
+          <label>Scenario name</label>
+          <input type="text" id="scenario-name" placeholder="e.g. High Carbon Tax" />
+        </div>
+        <button class="btn btn-primary btn-full btn-sm" onclick="handleCreateScenario()">+ New Scenario</button>
+        <div id="scenario-msg" class="mt-8"></div>
+        <hr class="divider" />
+        <div id="scenario-list"><p class="text-muted text-sm">Loading…</p></div>
+        <hr class="divider" />
+        <button class="btn btn-secondary btn-full btn-sm" onclick="handleSaveScenario()">Save current params</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title">Country Presets</div>
+        <div class="preset-row" id="preset-buttons">
+          <span class="text-muted text-sm">Loading presets…</span>
+        </div>
+        <div id="preset-msg"></div>
+        <hr class="divider" />
+
+        <div class="card-title">Parameters</div>
+
+        <div class="form-group">
+          <label>
+            Carbon Tax <span class="val" data-val="carbon_tax">30</span> $/tCO&#8322;
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon" tabindex="0">i</span>
+              <span class="tooltip-box">A tax levied per ton of CO&#8322; emitted. Higher values discourage fossil fuel use but raise energy costs and can reduce GDP.</span>
+            </span>
+            <span class="impact-arrow" data-output="energy_cost"></span>
+          </label>
+          <div class="input-row">
+            <input type="range"  data-param="carbon_tax" min="0" max="200" step="1" value="30" />
+            <input type="number" data-param="carbon_tax" min="0" max="200" step="1" value="30" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            Base Energy Cost <span class="val" data-val="base_energy_cost">50</span> $/MWh
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon" tabindex="0">i</span>
+              <span class="tooltip-box">Baseline cost of electricity before carbon tax is applied. Includes generation, transmission, and distribution costs.</span>
+            </span>
+          </label>
+          <div class="input-row">
+            <input type="range"  data-param="base_energy_cost" min="10" max="150" step="1" value="50" />
+            <input type="number" data-param="base_energy_cost" min="10" max="150" step="1" value="50" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            Renewable Share <span class="val" data-val="renewable_share">0.3</span>
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon" tabindex="0">i</span>
+              <span class="tooltip-box">Fraction of total energy supplied by renewables (solar, wind, hydro). Higher values reduce emissions and dampen carbon tax impact on cost.</span>
+            </span>
+            <span class="impact-arrow" data-output="emissions"></span>
+          </label>
+          <div class="input-row">
+            <input type="range"  data-param="renewable_share" min="0" max="1" step="0.01" value="0.3" />
+            <input type="number" data-param="renewable_share" min="0" max="1" step="0.01" value="0.3" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            Tax Rate <span class="val" data-val="tax_rate">0.25</span>
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon" tabindex="0">i</span>
+              <span class="tooltip-box">Economy-wide effective income tax rate. Reduces household savings (and thus capital formation) but raises government revenue.</span>
+            </span>
+            <span class="impact-arrow" data-output="gdp"></span>
+          </label>
+          <div class="input-row">
+            <input type="range"  data-param="tax_rate" min="0" max="0.6" step="0.01" value="0.25" />
+            <input type="number" data-param="tax_rate" min="0" max="0.6" step="0.01" value="0.25" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            Population Growth <span class="val" data-val="population_growth">0.02</span>
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon" tabindex="0">i</span>
+              <span class="tooltip-box">Annual rate of labour force growth. In the OLG model this affects labour supply and capital accumulation dynamics.</span>
+            </span>
+          </label>
+          <div class="input-row">
+            <input type="range"  data-param="population_growth" min="0" max="0.1" step="0.001" value="0.02" />
+            <input type="number" data-param="population_growth" min="0" max="0.1" step="0.001" value="0.02" />
+          </div>
+        </div>
+
+        <hr class="divider" />
+        <div class="card-title">Sensitivity Analysis
+          <span class="tooltip-wrap" style="display:inline-flex; margin-left:4px;">
+            <span class="tooltip-icon" tabindex="0">i</span>
+            <span class="tooltip-box">Runs all parameters through a 10% perturbation test to find which lever has the largest impact on each output. Elasticity = % output change per 1% input change.</span>
+          </span>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="handleSensitivity()">Run Sensitivity</button>
+        <div class="spinner-wrap" id="spinner-sensitivity"><div class="spinner"></div> Analysing…</div>
+        <div id="sensitivity-msg"></div>
+        <div id="sensitivity-results" class="mt-8"></div>
+
+        <hr class="divider" />
+        <div class="card-title">Parameter Sweep</div>
+        <div style="display:flex; gap:8px; align-items:flex-end;">
+          <div class="form-group" style="flex:1; margin-bottom:0;">
+            <label>Parameter</label>
+            <select id="sweep-param">
+              <option value="carbon_tax">carbon_tax</option>
+              <option value="base_energy_cost">base_energy_cost</option>
+              <option value="renewable_share">renewable_share</option>
+              <option value="tax_rate">tax_rate</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1; margin-bottom:0;">
+            <label>Model</label>
+            <select id="sweep-model">
+              <option value="clews">CLEWS</option>
+              <option value="og">OG-Core</option>
+            </select>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="handleSweep()" style="margin-bottom:0;">Sweep</button>
+        </div>
+        <div id="sweep-msg"></div>
+        <div class="spinner-wrap" id="spinner-sweep"><div class="spinner"></div> Running sweep…</div>
+        <div id="chart-sweep" class="chart-box"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title">Model</div>
+        <div class="model-selector">
+          <button class="model-btn active" data-model="clews">
+            CLEWS
+            <div class="model-desc">Energy / climate / resources</div>
+          </button>
+          <button class="model-btn" data-model="og">
+            OG-Core
+            <div class="model-desc">Overlapping generations macro</div>
+          </button>
+        </div>
+        <hr class="divider" />
+        <button class="btn btn-primary btn-full" id="btn-run-model" onclick="handleRunModel()">Run</button>
+        <div class="spinner-wrap mt-8" id="spinner-run"><div class="spinner"></div> Running…</div>
+        <div id="warnings-msg" class="mt-8"></div>
+        <div id="run-msg" class="mt-8"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="model-results" class="mt-16"></div>
+  <div class="chart-row">
+    <div id="chart-clews" class="chart-box"></div>
+    <div id="chart-og"    class="chart-box"></div>
+  </div>
+</section>
+
+
+<section id="tab-coupled" class="tab-panel">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Coupling Direction</div>
+      <div class="dir-toggle">
+        <button class="dir-btn active" data-dir="clews_to_og">CLEWS to OG-Core</button>
+        <button class="dir-btn"        data-dir="og_to_clews">OG-Core to CLEWS</button>
+      </div>
+      <p class="text-muted text-sm">Uses the active scenario's parameters. Select a scenario on the <strong>Models</strong> tab first.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Pipeline Progress</div>
+      <div class="pipeline-steps">
+        <div class="pipeline-step" id="step-1"><div class="step-circle">1</div><div class="step-label">Model A</div></div>
+        <div class="pipeline-step" id="step-2"><div class="step-circle">2</div><div class="step-label">Transform</div></div>
+        <div class="pipeline-step" id="step-3"><div class="step-circle">3</div><div class="step-label">Model B</div></div>
+      </div>
+      <div class="validation-row">
+        <span id="val-clews"    class="val-badge idle">CLEWS</span>
+        <span id="val-exchange" class="val-badge idle">Exchange</span>
+        <span id="val-og"       class="val-badge idle">OG-Core</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-12">
+    <div class="card-title">Data Flow</div>
+    <div class="flow-diagram" id="flow-diagram">
+      <div class="text-muted text-sm">Run the pipeline to see data flow.</div>
+    </div>
+  </div>
+
+  <div style="margin:16px 0; display:flex; align-items:center; gap:12px;">
+    <button class="btn btn-primary" id="btn-run-coupled" onclick="handleRunCoupled()">Run Coupled Pipeline</button>
+    <div class="spinner-wrap" id="spinner-coupled"><div class="spinner"></div> Running…</div>
+  </div>
+  <div id="coupled-msg"></div>
+
+  <div class="grid-3-eq mt-12">
+    <div class="card">
+      <div class="card-title">Model A Output</div>
+      <div id="coupled-model-a"><p class="text-muted text-sm">Run the pipeline to see results.</p></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Exchange Data
+        <span class="tooltip-wrap" style="display:inline-flex; margin-left:4px;">
+          <span class="tooltip-icon" tabindex="0">i</span>
+          <span class="tooltip-box">Intermediate values produced by the mapping layer — these are the actual inputs passed from Model A to Model B.</span>
+        </span>
+      </div>
+      <div id="coupled-exchange"><p class="text-muted text-sm">Intermediate transformed values.</p></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Model B Output</div>
+      <div id="coupled-model-b"><p class="text-muted text-sm">Run the pipeline to see results.</p></div>
+    </div>
+  </div>
+</section>
+
+
+<section id="tab-converging" class="tab-panel">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Convergence Config</div>
+      <div class="form-group">
+        <label>
+          Tolerance <span class="val" data-val="tolerance">0.5</span> (GDP threshold)
+          <span class="tooltip-wrap">
+            <span class="tooltip-icon" tabindex="0">i</span>
+            <span class="tooltip-box">The iterative loop stops when the absolute change in GDP between consecutive iterations falls below this value. Smaller values require more iterations but produce a more precise equilibrium.</span>
+          </span>
+        </label>
+        <div class="input-row">
+          <input type="range"  data-param="tolerance" min="0.01" max="5" step="0.01" value="0.5" />
+          <input type="number" data-param="tolerance" min="0.01" max="5" step="0.01" value="0.5" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Max Iterations
+          <span class="tooltip-wrap">
+            <span class="tooltip-icon" tabindex="0">i</span>
+            <span class="tooltip-box">Safety limit — the loop stops here even if convergence has not been reached, preventing an infinite loop.</span>
+          </span>
+        </label>
+        <input type="number" data-param="max_iterations" min="1" max="100" value="20" />
+      </div>
+      <button class="btn btn-primary btn-full" id="btn-run-conv" onclick="handleRunConverging()">Run Converging</button>
+      <div class="spinner-wrap mt-8" id="spinner-conv"><div class="spinner"></div> Running iterations…</div>
+      <div id="conv-msg" class="mt-8"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Convergence Status</div>
+      <div id="conv-status-badge" class="conv-status idle">Not yet run</div>
+      <p class="text-muted text-sm">
+        The converging mode runs CLEWS and OG-Core iteratively, feeding each round's OG output back into CLEWS
+        as an updated energy demand signal. It stops when |GDP| &lt; tolerance.
+      </p>
+    </div>
+  </div>
+
+  <div class="chart-row-3 mt-16">
+    <div class="card">
+      <div class="card-title">GDP over Iterations</div>
+      <div id="chart-convergence" class="chart-box"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Emissions &amp; Energy Cost</div>
+      <div id="chart-emissions" class="chart-box"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">|GDP| per Iteration
+        <span class="tooltip-wrap" style="display:inline-flex; margin-left:4px;">
+          <span class="tooltip-icon" tabindex="0">i</span>
+          <span class="tooltip-box">Shows the absolute GDP change each iteration. Green bars are below the tolerance threshold. The dashed red line marks the tolerance.</span>
+        </span>
+      </div>
+      <div id="chart-delta" class="chart-box"></div>
+    </div>
+  </div>
+
+  <div class="card mt-16">
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <div class="card-title" style="margin-bottom:0;">Iteration History</div>
+      <button class="expand-btn" onclick="document.getElementById('iter-table-wrap').classList.toggle('hidden')">Show / Hide</button>
+    </div>
+    <div id="iter-table-wrap" class="mt-8" style="overflow-x:auto;">
+      <table class="iter-table">
+        <thead>
+          <tr><th>Iteration</th><th>GDP</th><th>Energy Cost</th><th>Emissions</th><th>|GDP|</th></tr>
+        </thead>
+        <tbody id="iter-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+
+<section id="tab-results" class="tab-panel">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Past Runs</div>
+      <div id="results-msg"></div>
+      <div id="run-list"><p class="text-muted text-sm">Loading…</p></div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title">Compare Two Runs</div>
+        <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;">
+          <div class="form-group" style="flex:1; min-width:140px; margin-bottom:0;">
+            <label>Run A</label>
+            <select id="compare-a"><option value="">— select —</option></select>
+          </div>
+          <div class="form-group" style="flex:1; min-width:140px; margin-bottom:0;">
+            <label>Run B</label>
+            <select id="compare-b"><option value="">— select —</option></select>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="handleCompare()">Compare</button>
+        </div>
+        <div id="compare-msg" class="mt-8"></div>
+      </div>
+
+      <div class="card mt-12 hidden" id="compare-area">
+        <div class="card-title">Comparison Chart</div>
+        <div id="chart-compare" class="chart-box"></div>
+        <div id="compare-table" class="mt-12"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section id="tab-help" class="tab-panel">
+
+  <div class="card about-card">
+    <div class="card-title">About</div>
+    <p class="about-tagline">Policy Impact Simulator is an integrated modelling workbench for exploring how energy policy decisions interact with macroeconomic outcomes.</p>
+    <div class="about-features">
+      <div class="about-feature">
+        <div class="about-feature-title">CLEWS Energy Model</div>
+        <div class="about-feature-desc">Computes energy cost, total emissions, renewable investment requirements, and consumption based on carbon tax, renewable share, and baseline cost parameters. Grounded in the CLEWS/OSeMOSYS framework used in national energy planning.</div>
+      </div>
+      <div class="about-feature">
+        <div class="about-feature-title">OG-Core Macro Model</div>
+        <div class="about-feature-desc">Runs an overlapping-generations (OLG) macroeconomic model to derive GDP, wages, household savings, capital stock, and government revenue. Captures how fiscal policy and energy costs affect long-run economic equilibrium.</div>
+      </div>
+      <div class="about-feature">
+        <div class="about-feature-title">Coupled Pipeline</div>
+        <div class="about-feature-desc">Chains both models together with a validated mapping layer. Run CLEWS first and feed energy cost outputs into OG-Core as production cost shocks — or reverse the direction to study how GDP growth changes energy demand.</div>
+      </div>
+      <div class="about-feature">
+        <div class="about-feature-title">Converging Equilibrium</div>
+        <div class="about-feature-desc">Iterates the coupled pipeline until the absolute change in GDP between rounds falls below a user-set tolerance. Finds the joint equilibrium of the energy–economy system and visualises the convergence path across iterations.</div>
+      </div>
+      <div class="about-feature">
+        <div class="about-feature-title">Scenario Management</div>
+        <div class="about-feature-desc">Create, save, and switch between named scenarios. Country presets (India, Germany, Nigeria, USA) provide real-world baseline parameters. Every run is logged with full timing and outputs for later retrieval and comparison.</div>
+      </div>
+      <div class="about-feature">
+        <div class="about-feature-title">Analysis Tools</div>
+        <div class="about-feature-desc">Sensitivity analysis identifies which parameter drives each output most strongly. Parameter sweep charts how any single input affects all outputs across its full range. Side-by-side run comparison shows absolute and percentage differences between scenarios.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="help-grid">
+
+    <div>
+      <div class="card">
+        <div class="card-title">How to Use</div>
+
+        <div class="help-steps">
+          <div class="help-step">
+            <div class="help-step-num">1</div>
+            <div class="help-step-body">
+              <div class="help-step-title">Create a Scenario</div>
+              <div class="help-step-desc">On the <strong>Models</strong> tab, type a name in the Scenario field and click <em>+ New Scenario</em>. A scenario stores your parameter values and run config so you can reproduce results later.</div>
+            </div>
+          </div>
+          <div class="help-step">
+            <div class="help-step-num">2</div>
+            <div class="help-step-body">
+              <div class="help-step-title">Set Parameters</div>
+              <div class="help-step-desc">Use the sliders or number inputs to adjust Carbon Tax, Base Energy Cost, Renewable Share, Tax Rate, and Population Growth. Or click a <strong>Country Preset</strong> to load real-world baseline values instantly. Hover the <em>i</em> icons for explanations of each parameter.</div>
+            </div>
+          </div>
+          <div class="help-step">
+            <div class="help-step-num">3</div>
+            <div class="help-step-body">
+              <div class="help-step-title">Choose a Model and Run</div>
+              <div class="help-step-desc">Select <strong>CLEWS</strong> (energy/climate) or <strong>OG-Core</strong> (macro/fiscal) from the Model panel, then click <em>Run</em>. Result cards appear with the computed outputs. A + / - indicator shows how each value changed from the previous run.</div>
+            </div>
+          </div>
+          <div class="help-step">
+            <div class="help-step-num">4</div>
+            <div class="help-step-body">
+              <div class="help-step-title">Run the Coupled Pipeline</div>
+              <div class="help-step-desc">Switch to the <strong>Coupled</strong> tab. Choose a direction (CLEWS to OG-Core, or reverse), then click <em>Run Coupled Pipeline</em>. The Data Flow diagram shows each stage, timing, and the intermediate exchange values passed between models.</div>
+            </div>
+          </div>
+          <div class="help-step">
+            <div class="help-step-num">5</div>
+            <div class="help-step-body">
+              <div class="help-step-title">Find Equilibrium with Converging Mode</div>
+              <div class="help-step-desc">Go to the <strong>Converging</strong> tab. Set a Tolerance (e.g. 0.5) and Max Iterations, then click <em>Run Converging</em>. The pipeline iterates until the absolute GDP change per iteration falls below the tolerance. Three charts show GDP trajectory, emissions, and the convergence delta.</div>
+            </div>
+          </div>
+          <div class="help-step">
+            <div class="help-step-num">6</div>
+            <div class="help-step-body">
+              <div class="help-step-title">Compare and Export</div>
+              <div class="help-step-desc">On the <strong>Results</strong> tab, browse all saved runs. Select any two runs in the Compare dropdowns to see a side-by-side bar chart and a table of % differences. Click <em>CSV</em> on any run to download its full output.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title">FAQ</div>
+        <div class="faq-list">
+
+          <details class="faq-item">
+            <summary class="faq-q">What is the Policy Impact Simulator?</summary>
+            <div class="faq-a">A prototype tool that demonstrates bidirectional integration between CLEWS/OSeMOSYS (energy system model) and OG-Core (overlapping-generations macroeconomic model). It lets analysts explore how energy policies ripple through the broader economy and vice versa.</div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-q">What is CLEWS / OSeMOSYS?</summary>
+            <div class="faq-a">CLEWS (Climate, Land, Energy and Water Systems) is a framework for integrated resource planning. OSeMOSYS is an open-source energy system optimisation model widely used in developing-country long-range planning. This simulator uses a lightweight analytical approximation of the energy cost and emissions outputs.</div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-q">What is OG-Core?</summary>
+            <div class="faq-a">OG-Core is an open-source overlapping-generations (OLG) macroeconomic model maintained by the Policy Simulation Library. It models how households in different age cohorts save, work, and consume over their lifetimes. This simulator uses a Cobb-Douglas approximation of its GDP, wages, and capital outputs.</div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-q">What does "Coupled" mean?</summary>
+            <div class="faq-a">In Coupled mode the two models run sequentially and exchange data once. Model A runs first, a mapping layer transforms its outputs into inputs for Model B, and Model B runs second. You can choose either direction: CLEWS drives OG-Core (energy costs affect the macro economy) or OG-Core drives CLEWS (GDP growth feeds back into energy demand).</div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-q">When has the Converging pipeline "converged"?</summary>
+            <div class="faq-a">The pipeline runs CLEWS and OG-Core in a loop, feeding each iteration's macro output back into the energy model. It is considered converged when the absolute change in GDP between two consecutive iterations (|&Delta;GDP|) falls below the Tolerance value you set. A green star marks the convergence point on the GDP chart.</div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-q">What are the country presets based on?</summary>
+            <div class="faq-a">The four presets (India, Germany, Nigeria, USA) use indicative values drawn from public sources: IEA energy statistics, World Bank carbon pricing databases, and OECD fiscal data. They are approximate baselines suitable for demonstrating relative differences between economies, not precise policy simulations.</div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-q">What does Sensitivity Analysis show?</summary>
+            <div class="faq-a">Sensitivity Analysis perturbs each input parameter by 10% and measures how much each output changes. The result is an elasticity: % change in output per 1% change in input. The table highlights which single parameter has the largest influence on each output metric at the current parameter values.</div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-q">Why does a run show a yellow warning badge?</summary>
+            <div class="faq-a">Warnings are non-blocking alerts for parameter values that are technically valid but economically unusual — for example a carbon tax above $150/tCO&#8322;, a renewable share above 85%, or a tax rate above 50%. The run still executes; the warning is there to prompt you to double-check your intent.</div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-q">How do I export results?</summary>
+            <div class="faq-a">On the <strong>Results</strong> tab, each run row has a <em>CSV</em> button that downloads all numeric outputs for that run as a flat key-value CSV. A JSON export is also available via the API at <code>/results/&lt;run_id&gt;/export/json</code>. Individual scenarios can be exported via <code>/scenarios/&lt;id&gt;/export</code>.</div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-q">Are these real model outputs?</summary>
+            <div class="faq-a">No — this prototype uses analytical approximations (closed-form formulas) to stand in for the full OG-Core optimisation solver and OSeMOSYS LP engine. The qualitative relationships are correct (higher carbon tax raises energy cost, higher tax rate reduces GDP, etc.) but the absolute numbers are illustrative only.</div>
+          </details>
+
+        </div>
+      </div>
+
+      <div class="card mt-12">
+        <div class="card-title">Parameter Reference</div>
+        <table class="iter-table">
+          <thead><tr><th>Parameter</th><th>Range</th><th>Unit</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr><td>Carbon Tax</td><td>0 – 200</td><td>$/tCO&#8322;</td><td>Raises energy cost; reduces emissions and GDP</td></tr>
+            <tr><td>Base Energy Cost</td><td>10 – 150</td><td>$/MWh</td><td>Floor cost of electricity; directly raises production costs</td></tr>
+            <tr><td>Renewable Share</td><td>0 – 1</td><td>fraction</td><td>Higher share dampens carbon tax impact and cuts emissions</td></tr>
+            <tr><td>Tax Rate</td><td>0 – 0.6</td><td>fraction</td><td>Reduces household savings and capital; raises govt revenue</td></tr>
+            <tr><td>Population Growth</td><td>0 – 0.1</td><td>annual rate</td><td>Increases labour supply and GDP in the OLG model</td></tr>
+            <tr><td>Tolerance</td><td>0.01 – 5</td><td>GDP units</td><td>Convergence threshold for the iterative pipeline</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</div>
+
+
+<div id="features-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeFeaturesModal()">
+  <div class="modal-box modal-box-wide">
+    <div class="modal-header">
+      <h2>Key Features</h2>
+      <button class="modal-close" onclick="closeFeaturesModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="features-grid">
+
+        <div class="feature-item">
+          <div class="feature-badge">Design</div>
+          <div class="feature-name">Minimalistic Interface</div>
+          <div class="feature-body">Clean, uncluttered layout built for analysts and policymakers. Every control is labelled, every output is explained, and nothing competes for attention. No installation, no command line — runs entirely in the browser.</div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-badge">Usability</div>
+          <div class="feature-name">No-Code Policy Exploration</div>
+          <div class="feature-body">Adjust carbon taxes, renewable share, fiscal rates, and population growth with sliders. Instant feedback with directional indicators showing how each lever shifts outputs. Country presets load real-world baselines in one click.</div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-badge">Modelling</div>
+          <div class="feature-name">Iterative Convergence Engine</div>
+          <div class="feature-body">The converging pipeline runs CLEWS and OG-Core in a feedback loop — each round's macro output feeds back into the energy model — until GDP stabilises within a user-set tolerance. Tracks every iteration so you can inspect the convergence path.</div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-badge">Integration</div>
+          <div class="feature-name">Bidirectional Model Coupling</div>
+          <div class="feature-body">Run energy-to-economy (CLEWS drives OG-Core) or economy-to-energy (OG-Core drives CLEWS). A validated mapping layer handles unit conversion and data exchange between models, with live pipeline step indicators.</div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-badge">Analysis</div>
+          <div class="feature-name">Sensitivity &amp; Sweep Analysis</div>
+          <div class="feature-body">Sensitivity analysis perturbs every parameter by 10% to rank which lever matters most for each output. Parameter sweep sweeps any single input across its full range and charts all outputs simultaneously — without writing a single line of code.</div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-badge">Reproducibility</div>
+          <div class="feature-name">Scenario Logging &amp; Export</div>
+          <div class="feature-body">Every run is automatically saved with its full parameter set, timing data, and outputs. Name and save scenarios for later. Compare any two runs side-by-side with a grouped bar chart and a % difference table. Export to CSV in one click.</div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-badge">Validation</div>
+          <div class="feature-name">Real-time Parameter Warnings</div>
+          <div class="feature-body">The system checks for economically unusual inputs — extremely high carbon taxes, near-total renewable shares, confiscatory tax rates — and surfaces non-blocking warnings before you run. Runs always complete; warnings are advisory, not blockers.</div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-badge">Accessibility</div>
+          <div class="feature-name">Light &amp; Dark Mode</div>
+          <div class="feature-body">Toggle between light and dark themes. All charts, labels, and legends re-render immediately to match the selected theme. Preferences persist across tab switches and remain consistent across all four modules.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div id="arch-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeArchModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Architecture &amp; Feature Overview</h2>
+      <button class="modal-close" onclick="closeArchModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="arch-img-wrap">
+        <img src="/static/img/architecture.png" alt="Architecture diagram" class="arch-img" />
+      </div>
+
+      <h3>Feature Overview</h3>
+      <table>
+        <thead><tr><th>Module</th><th>Feature</th></tr></thead>
+        <tbody>
+          <tr><td>Models (Tab 1)</td><td>Scenario CRUD, country presets, independent model execution, sensitivity analysis, parameter sweep</td></tr>
+          <tr><td>Coupled (Tab 2)</td><td>Bidirectional pipeline, step validation, exchange data inspection, live flow diagram</td></tr>
+          <tr><td>Converging (Tab 3)</td><td>Iterative equilibrium loop, tolerance config, convergence charts, iteration history table</td></tr>
+          <tr><td>Results (Tab 4)</td><td>Run history, side-by-side comparison, % diff table, CSV export</td></tr>
+        </tbody>
+      </table>
+
+      <h3>References</h3>
+      <p>
+        <a href="https://github.com/OSeMOSYS/MUIO" target="_blank">MUIO (existing UI)</a> &middot;
+        <a href="https://github.com/PSLmodels/OG-Core" target="_blank">OG-Core</a> &middot;
+        <a href="https://github.com/OSeMOSYS/OSeMOSYS" target="_blank">OSeMOSYS</a>
+      </p>
+      <p><em>Simplified model formulas — real OG-Core uses a full 80-period OLG lifecycle optimisation.</em></p>
+    </div>
+  </div>
+</div>
+
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-links">
+      <a href="https://github.com/OSeMOSYS/MUIO" target="_blank">MUIO</a>
+      <span class="footer-sep">&middot;</span>
+      <a href="https://github.com/PSLmodels/OG-Core" target="_blank">OG-Core</a>
+      <span class="footer-sep">&middot;</span>
+      <a href="https://github.com/OSeMOSYS/OSeMOSYS" target="_blank">OSeMOSYS</a>
+    </div>
+    <div class="footer-note">
+      Policy Impact Simulator &mdash; CLEWS &amp; OG-Core Integration Prototype
+    </div>
+    <div class="footer-note">
+      Simplified formulas &mdash; real OG-Core uses a full 80-period OLG lifecycle model.
+    </div>
+  </div>
+</footer>
+
+<script src="/static/js/scenarios.js"></script>
+<script src="/static/js/charts.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
