@@ -19,9 +19,8 @@ A web-based modelling workbench for exploring how energy policy decisions intera
 9. [API Reference](#api-reference)
 10. [Configuration](#configuration)
 11. [Data Storage](#data-storage)
-12. [Deployment](#deployment)
-13. [Limitations](#limitations)
-14. [References](#references)
+12. [Limitations](#limitations)
+13. [References](#references)
 
 ---
 
@@ -424,69 +423,6 @@ A run result file contains:
   "metadata": { ... }
 }
 ```
-
----
-
-## Deployment
-
-### Render (Recommended — Free Tier Available)
-
-1. Push the project to a GitHub repository.
-2. Create a new **Web Service** on [render.com](https://render.com).
-3. Set the build command: `pip install -r requirements.txt`
-4. Set the start command: `gunicorn -w 2 -b 0.0.0.0:$PORT app:app`
-5. Add environment variable `PORT` with value `8888` (Render overrides this automatically).
-
-Add `gunicorn` to `requirements.txt` before deploying:
-
-```
-flask>=3.0.0
-gunicorn>=21.0.0
-```
-
-### Railway
-
-1. Connect your GitHub repository on [railway.app](https://railway.app).
-2. Railway auto-detects Python. Set the start command to: `gunicorn -w 2 -b 0.0.0.0:$PORT app:app`
-3. Add `gunicorn` to `requirements.txt`.
-
-### Fly.io
-
-1. Install the Fly CLI: `curl -L https://fly.io/install.sh | sh`
-2. From the project directory: `fly launch`
-3. Accept the defaults. Fly detects Flask automatically.
-4. Deploy with: `fly deploy`
-
-### Docker
-
-Create a `Dockerfile` in the project root:
-
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
-EXPOSE 8888
-CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:8888", "app:app"]
-```
-
-Build and run:
-
-```bash
-docker build -t policy-impact-simulator .
-docker run -p 8888:8888 policy-impact-simulator
-```
-
-### Important Note on Persistent Storage
-
-The simulator writes scenarios, results, and logs to the `data/` directory on disk. On platforms with ephemeral file systems (Render free tier, Railway, Fly.io), this data is lost on each redeploy or instance restart.
-
-For persistent storage across deploys, either:
-- Mount a persistent disk (Render paid tier, Fly.io volumes, Railway volumes), or
-- Migrate file storage to an external service such as a managed PostgreSQL database or object storage (S3 / Cloudflare R2)
-
-For a prototype or demonstration, ephemeral storage is acceptable — data simply resets on each deploy.
 
 ---
 
