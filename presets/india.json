@@ -1,0 +1,24 @@
+{
+  "id": "india",
+  "name": "India",
+  "flag": "🇮🇳",
+  "description": "High population growth, coal-heavy energy mix, moderate carbon pricing. India's 2030 NDC targets 50% non-fossil capacity but starts from a low renewable base.",
+  "parameters": {
+    "carbon_tax": 12,
+    "base_energy_cost": 42,
+    "renewable_share": 0.22,
+    "tax_rate": 0.18,
+    "population_growth": 0.009
+  },
+  "run_config": {
+    "tolerance": 0.5,
+    "max_iterations": 20,
+    "coupling_direction": "clews_to_og"
+  },
+  "context": {
+    "gdp_per_capita_usd": 2500,
+    "primary_energy_source": "Coal (45%), Oil (25%), Renewables (22%)",
+    "carbon_price_source": "India does not have an explicit carbon tax; value represents implicit carbon cost via coal cess",
+    "renewable_target_2030": "500 GW non-fossil capacity"
+  }
+}

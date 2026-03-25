@@ -1,0 +1,24 @@
+{
+  "id": "germany",
+  "name": "Germany",
+  "flag": "🇩🇪",
+  "description": "Energiewende leader — high carbon pricing, high renewable penetration, low population growth, strong fiscal policy. EU ETS + national carbon levy.",
+  "parameters": {
+    "carbon_tax": 65,
+    "base_energy_cost": 85,
+    "renewable_share": 0.52,
+    "tax_rate": 0.38,
+    "population_growth": 0.001
+  },
+  "run_config": {
+    "tolerance": 0.5,
+    "max_iterations": 20,
+    "coupling_direction": "clews_to_og"
+  },
+  "context": {
+    "gdp_per_capita_usd": 48000,
+    "primary_energy_source": "Renewables (52%), Gas (25%), Nuclear (phased out)",
+    "carbon_price_source": "EU ETS (~65 EUR/tCO2) + national carbon levy",
+    "renewable_target_2030": "80% electricity from renewables by 2030"
+  }
+}

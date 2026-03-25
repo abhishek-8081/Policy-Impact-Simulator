@@ -1,0 +1,24 @@
+{
+  "id": "nigeria",
+  "name": "Nigeria",
+  "flag": "🇳🇬",
+  "description": "High population growth, fossil-fuel dependent economy, negligible carbon pricing. Energy access is the primary challenge — 85M people lack electricity.",
+  "parameters": {
+    "carbon_tax": 2,
+    "base_energy_cost": 28,
+    "renewable_share": 0.08,
+    "tax_rate": 0.12,
+    "population_growth": 0.026
+  },
+  "run_config": {
+    "tolerance": 0.5,
+    "max_iterations": 20,
+    "coupling_direction": "clews_to_og"
+  },
+  "context": {
+    "gdp_per_capita_usd": 2100,
+    "primary_energy_source": "Oil/Gas (75%), Hydro (17%), Other renewables (<8%)",
+    "carbon_price_source": "No formal carbon tax; value represents fossil fuel subsidy reform signal",
+    "renewable_target_2030": "30% renewable electricity by 2030 (Paris NDC)"
+  }
+}

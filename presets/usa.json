@@ -1,0 +1,24 @@
+{
+  "id": "usa",
+  "name": "United States",
+  "flag": "🇺🇸",
+  "description": "No federal carbon tax (IRA uses tax credits instead), moderate renewable growth, ageing population. State-level policies vary widely — this represents the federal average.",
+  "parameters": {
+    "carbon_tax": 18,
+    "base_energy_cost": 62,
+    "renewable_share": 0.21,
+    "tax_rate": 0.21,
+    "population_growth": 0.005
+  },
+  "run_config": {
+    "tolerance": 0.5,
+    "max_iterations": 20,
+    "coupling_direction": "clews_to_og"
+  },
+  "context": {
+    "gdp_per_capita_usd": 76000,
+    "primary_energy_source": "Natural Gas (33%), Oil (28%), Renewables (21%), Nuclear (18%)",
+    "carbon_price_source": "No federal carbon tax; IRA Inflation Reduction Act provides tax credits. Value represents implicit social cost of carbon used in federal rulemaking.",
+    "renewable_target_2030": "100% clean electricity by 2035 (Biden target)"
+  }
+}
