@@ -74,37 +74,10 @@ Full theme support with a warm amber palette (Dark Forge). Charts, labels, and l
 
 ## Architecture
 
-```
-Browser (4 tabs + 2 modals)
-        |
-        v
-Flask Application (app.py)
-        |
-        +-- /scenarios   routes/scenarios.py   Scenario CRUD
-        +-- /run         routes/simulate.py    Execution entry point
-        +-- /results     routes/results.py     Run history and comparison
-        +-- /presets     routes/presets.py     Country preset loading
-        +-- /sweep       routes/analysis.py    Sensitivity and sweep
-        |
-        v
-pipeline/orchestrator.py
-        |
-        +-- run_independent()   Single model, no coupling
-        +-- run_coupled()       Sequential A -> mapping -> B
-        +-- run_converging()    Iterative loop until convergence
-        |
-        +-- models/clews_lite.py     CLEWS energy model
-        +-- models/og_lite.py        OG-Core macro model
-        +-- pipeline/mapping.py      Output-to-input transformation layer
-        +-- pipeline/validation.py   Field, type, and range checks
-        |
-        v
-data/
-        +-- scenarios/    Named scenario JSON files
-        +-- results/      Per-run result directories
-        +-- exchange/     Intermediate coupling data
-        +-- logs/         Run log (JSONL format)
-```
+
+<img width="5207" height="2085" alt="image" src="https://github.com/user-attachments/assets/cf961805-ec46-4bdb-9cda-cbfd1a88f08b" />
+
+
 
 ---
 
