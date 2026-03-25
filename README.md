@@ -195,6 +195,9 @@ Additional tools available on this tab:
 
 Chains both models in sequence with a single data exchange. Choose a direction:
 
+<img width="5748" height="3416" alt="image" src="https://github.com/user-attachments/assets/54b0be49-e99e-47a5-b33d-1e33d5900090" />
+
+
 - **CLEWS to OG-Core** — energy cost and emissions from CLEWS are mapped to production cost inputs for OG-Core
 - **OG-Core to CLEWS** — GDP and savings from OG-Core are mapped to energy demand adjustments for CLEWS
 
@@ -211,6 +214,9 @@ Extends the coupled pipeline into an iterative feedback loop.
 4. Compute |delta GDP| from the previous iteration
 5. If |delta GDP| < tolerance, stop. Otherwise map OG-Core outputs back to CLEWS energy demand parameters and go to step 1.
 6. Stop unconditionally at max iterations to prevent infinite loops.
+
+<img width="8355" height="2648" alt="diagram-export-25-03-2026-18_18_48" src="https://github.com/user-attachments/assets/425083b5-2077-4ce9-a850-9aafc93e9ab9" />
+
 
 **Configuration:**
 - `tolerance` — GDP convergence threshold (default 0.5)
@@ -377,6 +383,9 @@ data/
 +-- exchange/           Intermediate coupling data saved per coupled/converging run
 +-- logs/run_log.jsonl  Append-only log of all runs in JSONL format
 ```
+
+<img width="3183" height="3606" alt="image" src="https://github.com/user-attachments/assets/a2cf28ac-2b22-43af-8559-539aef23bc17" />
+
 
 A run result file contains:
 
